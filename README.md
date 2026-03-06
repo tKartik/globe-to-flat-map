@@ -39,6 +39,16 @@ Interactive 3D globe that morphs into a Van der Grinten flat map. Built with Thr
 └── README.md
 ```
 
+## Framer Property Panel
+
+To use the globe in Framer with the Property Panel (color, opacity, density controls):
+
+1. **Host the globe** – Enable [GitHub Pages](https://github.com/tKartik/globe-to-flat-map/settings/pages) on your repo (branch: `main`, folder: `/`).
+
+2. **Add the Code Component** – In Framer: Insert → Code → Create new component. Paste the contents of `GlobeMorphFramer.tsx` and set `GLOBE_URL` to your GitHub Pages URL (e.g. `https://tkartik.github.io/globe-to-flat-map/van-der-grinten-map.html`).
+
+3. **Use it** – Drag the component onto the canvas. When selected, Framer’s Property Panel (right side) shows Land Color, Ocean Color, Background, opacity, and density controls.
+
 ## License
 
 MIT

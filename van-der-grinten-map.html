@@ -306,26 +306,49 @@
 
     const uniforms = { uMorph: { value: 0 } };
 
+    /** Parse URL params (e.g. from Framer Property Panel) and return overrides */
+    function parseUrlParams() {
+      const p = new URLSearchParams(window.location.search);
+      const hex = p.get("hex");
+      const ocean = p.get("ocean");
+      const bg = p.get("bg");
+      const landOpacity = p.get("landOpacity");
+      const globeOpacity = p.get("globeOpacity");
+      const density = p.get("density");
+      const globeAlpha = p.get("globeAlpha");
+      return {
+        hex: hex ? (hex.startsWith("#") ? hex : "#" + hex) : null,
+        ocean: ocean ? (ocean.startsWith("#") ? ocean : "#" + ocean) : null,
+        bg: bg ? (bg.startsWith("#") ? bg : "#" + bg) : null,
+        landOpacity: landOpacity != null ? parseFloat(landOpacity) : null,
+        globeOpacity: globeOpacity != null ? parseFloat(globeOpacity) : null,
+        density: density != null ? parseInt(density, 10) : null,
+        globeAlpha: globeAlpha != null ? parseFloat(globeAlpha) : null
+      };
+    }
+
+    const urlParams = parseUrlParams();
+
     // --- Theme & appearance ---
     const COLOR_SETTINGS = {
-      bg0: "#000000",
+      bg0: urlParams.bg || "#000000",
       bg1: "#060200",
       bg2: "#140a03",
       text: "#f5d3a1",
       muted: "#c7a27a",
-      hex: "#ffffff",
-      globeCore: "#000000"
+      hex: urlParams.hex || "#ffffff",
+      globeCore: urlParams.ocean || "#000000"
     };
 
     const HEX_SETTINGS = {
-      density: 500,
+      density: urlParams.density ?? 500,
       color: COLOR_SETTINGS.hex,
-      opacity: 1
+      opacity: urlParams.landOpacity ?? 1
     };
 
     const GLOBE_SETTINGS = {
-      opacity: 0.5,
-      globeCoreAlpha: 0.8
+      opacity: urlParams.globeOpacity ?? 0.5,
+      globeCoreAlpha: urlParams.globeAlpha ?? 0.8
     };
 
     const HEX_DENSITY_RANGE = {
@@ -694,6 +717,47 @@
         `
       });
     }
+
+    /** Rebuild land hex geometry (e.g. when density changes via postMessage) */
+    function rebuildLandGeometry() {
+      if (!landMask || !landMesh) return;
+      const nextGeometry = buildHexFieldGeometry(landMask, {
+        planeRadius: densityToRadius(HEX_SETTINGS.density)
+      });
+      landMesh.geometry.dispose();
+      landMesh.geometry = nextGeometry;
+    }
+
+    /** Apply updates from Framer postMessage (live property changes) */
+    function applyGlobeUpdate(payload) {
+      if (payload.hex != null) {
+        const h = payload.hex.startsWith("#") ? payload.hex : "#" + payload.hex;
+        COLOR_SETTINGS.hex = h;
+        HEX_SETTINGS.color = h;
+      }
+      if (payload.ocean != null) {
+        COLOR_SETTINGS.globeCore = payload.ocean.startsWith("#") ? payload.ocean : "#" + payload.ocean;
+      }
+      if (payload.bg != null) {
+        COLOR_SETTINGS.bg0 = payload.bg.startsWith("#") ? payload.bg : "#" + payload.bg;
+      }
+      if (payload.landOpacity != null) HEX_SETTINGS.opacity = payload.landOpacity;
+      if (payload.globeOpacity != null) GLOBE_SETTINGS.opacity = payload.globeOpacity;
+      if (payload.globeAlpha != null) GLOBE_SETTINGS.globeCoreAlpha = payload.globeAlpha;
+      if (payload.density != null) {
+        HEX_SETTINGS.density = payload.density;
+        rebuildLandGeometry();
+      }
+      applyThemeColors();
+    }
+
+    window.addEventListener("message", (event) => {
+      if (event.data?.type === "globe-update") applyGlobeUpdate(event.data);
+    });
+
+    window.addEventListener("load", () => {
+      try { window.parent.postMessage({ type: "globe-ready" }, "*"); } catch (_) {}
+    });
 
     /** Sync land mesh material with HEX_SETTINGS */
     function updateLandAppearance() {
