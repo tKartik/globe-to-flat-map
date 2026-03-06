@@ -580,9 +580,10 @@
       return geometry;
     }
 
-    /** Map hex density (100–800) to hex radius for flat view */
+    /** Map hex density (150–750) to hex radius for flat view */
     function densityToRadius(density) {
-      const t = THREE.MathUtils.clamp((density - 100) / 700, 0, 1);
+      const d = Number(density) || 500;
+      const t = THREE.MathUtils.clamp((d - 150) / 600, 0, 1);
       return THREE.MathUtils.lerp(HEX_DENSITY_RANGE.maxRadius, HEX_DENSITY_RANGE.minRadius, t);
     }
 

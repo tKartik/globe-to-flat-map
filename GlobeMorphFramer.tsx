@@ -25,7 +25,7 @@ const DEFAULTS = {
   bg: "#000000",
   landOpacity: 1,
   globeOpacity: 0.5,
-  density: 500,
+  density: "500",
 }
 
 function toHex(color) {
@@ -93,7 +93,7 @@ GlobeMorph.defaultProps = {
   bg: "#000000",
   landOpacity: 1,
   globeOpacity: 0.5,
-  density: 500,
+  density: "500",
 }
 
 addPropertyControls(GlobeMorph, {
@@ -129,11 +129,10 @@ addPropertyControls(GlobeMorph, {
     defaultValue: 0.5,
   },
   density: {
-    type: ControlType.Number,
+    type: ControlType.Enum,
     title: "Hex Density",
-    min: 100,
-    max: 800,
-    step: 50,
-    defaultValue: 500,
+    defaultValue: "500",
+    options: ["150", "250", "400", "500", "600", "750"],
+    optionTitles: ["Low (150)", "Medium-Low (250)", "Medium (400)", "Default (500)", "High (600)", "Very High (750)"],
   },
 })
