@@ -315,15 +315,13 @@
       const landOpacity = p.get("landOpacity");
       const globeOpacity = p.get("globeOpacity");
       const density = p.get("density");
-      const globeAlpha = p.get("globeAlpha");
       return {
         hex: hex ? (hex.startsWith("#") ? hex : "#" + hex) : null,
         ocean: ocean ? (ocean.startsWith("#") ? ocean : "#" + ocean) : null,
         bg: bg ? (bg.startsWith("#") ? bg : "#" + bg) : null,
         landOpacity: landOpacity != null ? parseFloat(landOpacity) : null,
         globeOpacity: globeOpacity != null ? parseFloat(globeOpacity) : null,
-        density: density != null ? parseInt(density, 10) : null,
-        globeAlpha: globeAlpha != null ? parseFloat(globeAlpha) : null
+        density: density != null ? parseInt(density, 10) : null
       };
     }
 
@@ -348,7 +346,7 @@
 
     const GLOBE_SETTINGS = {
       opacity: urlParams.globeOpacity ?? 0.5,
-      globeCoreAlpha: urlParams.globeAlpha ?? 0.8
+      globeCoreAlpha: 1
     };
 
     const HEX_DENSITY_RANGE = {
@@ -582,9 +580,9 @@
       return geometry;
     }
 
-    /** Map hex density (0–100) to hex radius for flat view */
+    /** Map hex density (100–800) to hex radius for flat view */
     function densityToRadius(density) {
-      const t = THREE.MathUtils.clamp(density / 100, 0, 1);
+      const t = THREE.MathUtils.clamp((density - 100) / 700, 0, 1);
       return THREE.MathUtils.lerp(HEX_DENSITY_RANGE.maxRadius, HEX_DENSITY_RANGE.minRadius, t);
     }
 
@@ -743,7 +741,6 @@
       }
       if (payload.landOpacity != null) HEX_SETTINGS.opacity = payload.landOpacity;
       if (payload.globeOpacity != null) GLOBE_SETTINGS.opacity = payload.globeOpacity;
-      if (payload.globeAlpha != null) GLOBE_SETTINGS.globeCoreAlpha = payload.globeAlpha;
       if (payload.density != null) {
         HEX_SETTINGS.density = payload.density;
         rebuildLandGeometry();

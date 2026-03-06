@@ -14,13 +14,11 @@
  * @framerSupportedLayoutHeight any-prefer-fixed
  */
 
-import { useEffect, useRef } from "react"
 import { addPropertyControls, ControlType } from "framer"
 
 // Host your globe and put the full URL here. MUST be HTTPS (Framer blocks HTTP).
 const GLOBE_URL = "https://tkartik.com/globe-to-flat-map/van-der-grinten-map.html"
 
-const GLOBE_ORIGIN = new URL(GLOBE_URL).origin
 const DEFAULTS = {
   hex: "#ffffff",
   ocean: "#000000",
@@ -28,14 +26,6 @@ const DEFAULTS = {
   landOpacity: 1,
   globeOpacity: 0.5,
   density: 500,
-  globeAlpha: 0.8,
-}
-
-function toHexColor(color) {
-  if (!color) return null
-  if (color.startsWith("#")) return color
-  const h = toHex(color)
-  return h ? "#" + h : null
 }
 
 function toHex(color) {
@@ -49,43 +39,25 @@ function toHex(color) {
   return r + g + b
 }
 
+/** Build URL with ALL params (use defaults when prop undefined) — URL is source of truth */
+function buildGlobeUrl(p) {
+  const hex = p.hex != null ? (p.hex.startsWith("#") ? p.hex.slice(1) : toHex(p.hex)) : DEFAULTS.hex.slice(1)
+  const ocean = p.ocean != null ? (p.ocean.startsWith("#") ? p.ocean.slice(1) : toHex(p.ocean)) : DEFAULTS.ocean.slice(1)
+  const bg = p.bg != null ? (p.bg.startsWith("#") ? p.bg.slice(1) : toHex(p.bg)) : DEFAULTS.bg.slice(1)
+  const params = new URLSearchParams({
+    hex,
+    ocean,
+    bg,
+    landOpacity: String(p.landOpacity ?? DEFAULTS.landOpacity),
+    globeOpacity: String(p.globeOpacity ?? DEFAULTS.globeOpacity),
+    density: String(p.density ?? DEFAULTS.density),
+  })
+  return `${GLOBE_URL}?${params.toString()}`
+}
+
 export function GlobeMorph(props) {
-  const iframeRef = useRef(null)
-  const propsRef = useRef(props)
-
-  const sendUpdate = (p) => {
-    const iframe = iframeRef.current
-    if (!iframe?.contentWindow) return
-    const msg = {
-      type: "globe-update",
-      hex: toHexColor(p.hex) ?? DEFAULTS.hex,
-      ocean: toHexColor(p.ocean) ?? DEFAULTS.ocean,
-      bg: toHexColor(p.bg) ?? DEFAULTS.bg,
-      landOpacity: p.landOpacity ?? DEFAULTS.landOpacity,
-      globeOpacity: p.globeOpacity ?? DEFAULTS.globeOpacity,
-      globeAlpha: p.globeAlpha ?? DEFAULTS.globeAlpha,
-      density: p.density ?? DEFAULTS.density,
-    }
-    iframe.contentWindow.postMessage(msg, GLOBE_ORIGIN)
-  }
-
-  useEffect(() => {
-    propsRef.current = props
-    sendUpdate(props)
-  }, [props.hex, props.ocean, props.bg, props.landOpacity, props.globeOpacity, props.globeAlpha, props.density])
-
-  useEffect(() => {
-    const onMessage = (e) => {
-      if (e.origin === GLOBE_ORIGIN && e.data?.type === "globe-ready") sendUpdate(propsRef.current)
-    }
-    window.addEventListener("message", onMessage)
-    return () => window.removeEventListener("message", onMessage)
-  }, [])
-
-  const handleLoad = () => {
-    setTimeout(() => sendUpdate(propsRef.current), 200)
-  }
-
+  const p = { ...DEFAULTS, ...props }
+  const src = buildGlobeUrl(p)
   return (
     <div
       style={{
@@ -99,9 +71,9 @@ export function GlobeMorph(props) {
       }}
     >
       <iframe
-        ref={iframeRef}
-        src={GLOBE_URL}
-        onLoad={handleLoad}
+        key={src}
+        src={src}
+        title="Globe Morph"
         style={{
           position: "absolute",
           top: 0,
@@ -110,7 +82,6 @@ export function GlobeMorph(props) {
           height: "100%",
           border: "none",
         }}
-        title="Globe Morph"
       />
     </div>
   )
@@ -123,7 +94,6 @@ GlobeMorph.defaultProps = {
   landOpacity: 1,
   globeOpacity: 0.5,
   density: 500,
-  globeAlpha: 0.8,
 }
 
 addPropertyControls(GlobeMorph, {
@@ -165,13 +135,5 @@ addPropertyControls(GlobeMorph, {
     max: 800,
     step: 50,
     defaultValue: 500,
-  },
-  globeAlpha: {
-    type: ControlType.Number,
-    title: "Globe Core Alpha",
-    min: 0,
-    max: 1,
-    step: 0.05,
-    defaultValue: 0.8,
   },
 })
